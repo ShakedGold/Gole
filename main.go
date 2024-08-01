@@ -4,9 +4,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"shaked/gole/pkg/assets"
-	"shaked/gole/pkg/explorer"
-	"shaked/gole/pkg/menubar"
+
+	"github.com/ShakedGold/Gole/pkg/assets"
+	"github.com/ShakedGold/Gole/pkg/explorer"
+	"github.com/ShakedGold/Gole/pkg/menubar"
 
 	"gioui.org/app"
 	"gioui.org/layout"

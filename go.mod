@@ -1,4 +1,4 @@
-module shaked/gole
+module github.com/ShakedGold/Gole
 
 go 1.22.5
 
