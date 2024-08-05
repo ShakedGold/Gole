@@ -11,7 +11,7 @@ func Root() string {
 	return "assets"
 }
 
-func GetAsset(path string) ([]byte, error) {
+func GetAsset(path string) (*[]byte, error) {
 	// read file from assets
 	// return file content
 	assetFile, err := os.Open(filepath.Join(Root(), path))
@@ -31,21 +31,22 @@ func GetAsset(path string) ([]byte, error) {
 		return nil, err
 	}
 
-	return fileContent, nil
+	return &fileContent, nil
 }
 
-func GetImage(path string) (image.Image, error) {
+func GetImage(path string) (*image.Image, error) {
 	// read file from assets
 	// decode image
-	assetFile, err := GetAsset(path)
+	// return pointer to image
+	fileContent, err := GetAsset(path)
 	if err != nil {
 		return nil, err
 	}
 
-	img, _, err := image.Decode(bytes.NewReader(assetFile))
+	img, _, err := image.Decode(bytes.NewReader(*fileContent))
 	if err != nil {
 		return nil, err
 	}
 
-	return img, nil
+	return &img, nil
 }
