@@ -21,6 +21,8 @@ import (
 type Entry struct {
 	Path      string
 	Alias     string
+	Width     int
+	Height    int
 	IsFolder  bool
 	Clickable *widget.Clickable
 	Icon      *image.Image
@@ -45,6 +47,8 @@ func CreateFile(path string, alias string) (Entry, error) {
 		IsFolder:  false,
 		Clickable: new(widget.Clickable),
 		Icon:      icon,
+		Width:     200,
+		Height:    200,
 	}, nil
 }
 func CreateFolder(path string, alias string) (Entry, error) {
@@ -59,6 +63,8 @@ func CreateFolder(path string, alias string) (Entry, error) {
 		IsFolder:  true,
 		Clickable: new(widget.Clickable),
 		Icon:      icon,
+		Width:     200,
+		Height:    200,
 	}, nil
 }
 
@@ -145,7 +151,14 @@ func ByIsDir(entries []Entry) func(a, b int) bool {
 }
 
 func (e Entry) Layout(gtx layout.Context, theme *material.Theme) layout.Dimensions {
-	return material.Clickable(gtx, e.Clickable, func(gtx layout.Context) layout.Dimensions {
+	constraints := layout.Constraints{
+		Min: image.Point{X: e.Width, Y: e.Height},
+		Max: image.Point{X: e.Width, Y: e.Height},
+	}
+	originalConstraints := gtx.Constraints
+	gtx.Constraints = constraints
+
+	clickable := material.Clickable(gtx, e.Clickable, func(gtx layout.Context) layout.Dimensions {
 		return layout.UniformInset(unit.Dp(8)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 			return layout.Stack{
 				Alignment: layout.Center,
@@ -160,8 +173,7 @@ func (e Entry) Layout(gtx layout.Context, theme *material.Theme) layout.Dimensio
 								return layout.Dimensions{}
 							}
 							icon := widget.Image{
-								Src:   paint.NewImageOp(*e.Icon),
-								Scale: 0.5,
+								Src: paint.NewImageOp(*e.Icon),
 							}
 
 							return icon.Layout(gtx)
@@ -188,11 +200,33 @@ func (e Entry) Layout(gtx layout.Context, theme *material.Theme) layout.Dimensio
 			)
 		})
 	})
+
+	gtx.Constraints = originalConstraints
+
+	return clickable
 }
 
 func (entries *Entries) Layout(gtx layout.Context, theme *material.Theme, watcher *fsnotify.Watcher) (layout.Dimensions, *Entries, error) {
 	var layoutErr error
 	var updatedEntries *Entries
+
+	// get calculated width
+	width := gtx.Constraints.Max.X
+	// height := gtx.Constraints.Max.Y
+
+	if len(entries.Entries) == 0 {
+		return layout.Dimensions{}, nil, nil
+	}
+
+	// calculate number of columns
+	columns := width / entries.Entries[0].Width
+	if columns == 0 {
+		columns = 1
+	}
+
+	// update grid columns
+	entries.Grid.Columns = columns
+
 	layout := entries.Grid.Layout(gtx, theme, len(entries.Entries), func(gtx layout.Context, index int) layout.Dimensions {
 		clickable := entries.Entries[index].Clickable
 

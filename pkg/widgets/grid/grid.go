@@ -1,18 +1,14 @@
 package grid
 
 import (
-	"image"
-
 	"gioui.org/layout"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 )
 
 type Grid struct {
-	Columns    int
-	List       *widget.List
-	ItemWidth  int
-	ItemHeight int
+	Columns int
+	List    *widget.List
 }
 
 type GridRowElement func(gtx layout.Context, index int) layout.Dimensions
@@ -25,13 +21,6 @@ func (g Grid) Layout(gtx layout.Context, theme *material.Theme, len int, r GridR
 		numberOfRows++
 	}
 
-	constraints := layout.Constraints{
-		Min: image.Point{X: g.ItemWidth, Y: gtx.Constraints.Min.Y},
-		Max: image.Point{X: g.ItemWidth, Y: g.ItemHeight},
-		// Max: image.Point{X: g.ItemWidth, Y: gtx.Constraints.Max.Y},
-	}
-	originalConstraints := gtx.Constraints
-
 	rows := make([][]layout.FlexChild, numberOfRows)
 	for i := 0; i < numberOfRows; i++ {
 		rows[i] = make([]layout.FlexChild, g.Columns)
@@ -41,15 +30,11 @@ func (g Grid) Layout(gtx layout.Context, theme *material.Theme, len int, r GridR
 				if index >= len {
 					return layout.Dimensions{}
 				} else {
-					gtx.Constraints = constraints
 					return r(gtx, index)
 				}
 			})
 		}
 	}
-
-	// reset constraints
-	gtx.Constraints = originalConstraints
 
 	return g.List.Layout(gtx, numberOfRows, func(gtx layout.Context, index int) layout.Dimensions {
 		return layout.Flex{

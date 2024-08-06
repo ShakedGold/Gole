@@ -8,6 +8,8 @@ import (
 	"gioui.org/app"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/paint"
+	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"github.com/ShakedGold/Gole/pkg/assets"
 	"github.com/ShakedGold/Gole/pkg/explorer"
@@ -57,25 +59,46 @@ func run(window *app.Window) error {
 		return err
 	}
 
+	pathEditor := new(widget.Editor)
+	pathEditor.SetText(entries.Path)
+
 	// create the menu
 	menu := menubar.NewMenubar()
-	menu.AddMenuIcon(up, 0.5, func(gtx layout.Context) {
-		previousPath := filepath.Join(entries.Path, "..")
-		previousEntries, err := entry.ReadPath(previousPath)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		entrys, err := previousEntries.Prepare()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		entries = entrys
-	})
-	menu.AddMenuLabel("Gole", func(gtx layout.Context) string {
-		return entries.Path
-	})
+	upMenuItem := menubar.MenuItem{
+		Clickable: new(widget.Clickable),
+		OnClick: func(gtx layout.Context) {
+			previousPath := filepath.Join(entries.Path, "..")
+			previousEntries, err := entry.ReadPath(previousPath)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			entrys, err := previousEntries.Prepare()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			entries = entrys
+
+			// update editor
+			pathEditor.SetText(previousPath)
+		},
+		Layout: func(gtx layout.Context, th *material.Theme) layout.Dimensions {
+			return widget.Image{
+				Src: paint.NewImageOp(*up),
+			}.Layout(gtx)
+		},
+	}
+
+	pathMenuItem := menubar.MenuItem{
+		Layout: func(gtx layout.Context, th *material.Theme) layout.Dimensions {
+			pathEditor.SetText(entries.Path)
+			return material.Editor(th, pathEditor, "Path").Layout(gtx)
+		},
+	}
+
+	menu.AddMenuItem(upMenuItem)
+	menu.AddMenuItem(pathMenuItem)
 
 	var ops op.Ops
 
@@ -107,11 +130,6 @@ func run(window *app.Window) error {
 					return layoutEntries
 				}),
 			)
-			// g.Layout(gtx, theme, 10,
-			// 	func(gtx layout.Context, index int) layout.Dimensions {
-			// 		return material.Body1(theme, fmt.Sprintf("Hello - %d", index)).Layout(gtx)
-			// 	},
-			// )
 
 			// Pass the drawing operations to the GPU.
 			e.Frame(gtx.Ops)

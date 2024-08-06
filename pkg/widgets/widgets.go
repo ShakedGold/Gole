@@ -12,9 +12,7 @@ func Grid(cols int) grid.Grid {
 	list := new(widget.List)
 	list.Axis = layout.Vertical
 	return grid.Grid{
-		Columns:    cols,
-		List:       list,
-		ItemWidth:  200,
-		ItemHeight: 200,
+		Columns: cols,
+		List:    list,
 	}
 }
