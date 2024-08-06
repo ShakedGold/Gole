@@ -44,6 +44,7 @@ func (menu *Menubar) Layout(gtx layout.Context, th *material.Theme) layout.Dimen
 	}
 
 	return layout.Flex{
-		Axis: layout.Horizontal,
+		Axis:      layout.Horizontal,
+		Alignment: layout.Middle,
 	}.Layout(gtx, children...)
 }
