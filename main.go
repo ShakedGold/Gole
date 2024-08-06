@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"gioui.org/app"
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/paint"
@@ -15,6 +16,7 @@ import (
 	"github.com/ShakedGold/Gole/pkg/explorer"
 	"github.com/ShakedGold/Gole/pkg/widgets/entry"
 	"github.com/ShakedGold/Gole/pkg/widgets/menubar"
+	"github.com/ShakedGold/Gole/pkg/widgets/menubar/path"
 )
 
 func main() {
@@ -59,12 +61,11 @@ func run(window *app.Window) error {
 		return err
 	}
 
-	pathEditor := new(widget.Editor)
-	pathEditor.SetText(entries.Path)
+	pathItem := path.NewPath(entries)
 
 	// create the menu
 	menu := menubar.NewMenubar()
-	upMenuItem := menubar.MenuItem{
+	upMenuItem := &menubar.MenuItem{
 		Clickable: new(widget.Clickable),
 		OnClick: func(gtx layout.Context) {
 			previousPath := filepath.Join(entries.Path, "..")
@@ -73,15 +74,7 @@ func run(window *app.Window) error {
 				log.Println(err)
 				return
 			}
-			entrys, err := previousEntries.Prepare()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			entries = entrys
-
-			// update editor
-			pathEditor.SetText(previousPath)
+			entries.Update(previousEntries)
 		},
 		Layout: func(gtx layout.Context, th *material.Theme) layout.Dimensions {
 			return widget.Image{
@@ -90,15 +83,8 @@ func run(window *app.Window) error {
 		},
 	}
 
-	pathMenuItem := menubar.MenuItem{
-		Layout: func(gtx layout.Context, th *material.Theme) layout.Dimensions {
-			pathEditor.SetText(entries.Path)
-			return material.Editor(th, pathEditor, "Path").Layout(gtx)
-		},
-	}
-
 	menu.AddMenuItem(upMenuItem)
-	menu.AddMenuItem(pathMenuItem)
+	menu.AddMenuItem(pathItem.MenuItem)
 
 	var ops op.Ops
 
@@ -109,6 +95,27 @@ func run(window *app.Window) error {
 		case app.FrameEvent:
 			// This graphics context is used for managing the rendering state.
 			gtx := app.NewContext(&ops, e)
+
+			// Process events that arrived between the last frame and this one.
+			for {
+				// wait for any keyboard input
+				_, ok := e.Source.Event(
+					key.Filter{
+						Name: key.NameReturn,
+					},
+				)
+				if !ok {
+					break
+				}
+
+				// if the path editor is focused, update the path
+				entrys, err := entry.ReadPath(pathItem.PathEditor.Text())
+				if err != nil {
+					log.Println(err)
+					break
+				}
+				entries.Update(entrys)
+			}
 
 			layout.Flex{
 				Axis: layout.Vertical,
@@ -124,7 +131,7 @@ func run(window *app.Window) error {
 					}
 
 					if updatedEntries != nil {
-						entries = updatedEntries
+						entries.Update(updatedEntries)
 					}
 
 					return layoutEntries

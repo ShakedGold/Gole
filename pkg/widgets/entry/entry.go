@@ -31,7 +31,6 @@ type Entry struct {
 type Entries struct {
 	Entries []Entry
 	Path    string
-	List    *widget.List
 	Grid    *grid.Grid
 }
 
@@ -75,15 +74,11 @@ func ReadPath(path string) (*Entries, error) {
 		return &Entries{}, err
 	}
 
-	list := new(widget.List)
-	list.Axis = layout.Vertical
-
 	grid := widgets.Grid(9)
 
 	entries := Entries{
 		Entries: []Entry{},
 		Path:    path,
-		List:    list,
 		Grid:    &grid,
 	}
 
@@ -131,6 +126,15 @@ func (e *Entry) Action(watcher *fsnotify.Watcher) (*Entries, error) {
 	}
 
 	return &Entries{}, nil
+}
+
+func (entries *Entries) Update(entrys *Entries) {
+	entries.Path = entrys.Path
+	e, err := entrys.Prepare()
+	if err != nil {
+		return
+	}
+	entries.Entries = e.Entries
 }
 
 func (entries *Entries) Prepare() (*Entries, error) {
