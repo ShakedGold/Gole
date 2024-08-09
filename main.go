@@ -16,7 +16,8 @@ import (
 	"github.com/ShakedGold/Gole/pkg/explorer"
 	"github.com/ShakedGold/Gole/pkg/widgets/entry"
 	"github.com/ShakedGold/Gole/pkg/widgets/menubar"
-	"github.com/ShakedGold/Gole/pkg/widgets/menubar/path"
+	"github.com/ShakedGold/Gole/pkg/widgets/menubar/clickable"
+	"github.com/ShakedGold/Gole/pkg/widgets/menubar/editor"
 )
 
 func main() {
@@ -61,11 +62,22 @@ func run(window *app.Window) error {
 		return err
 	}
 
-	pathItem := path.NewPath(entries)
+	list, err := assets.GetImage("list.png")
+	if err != nil {
+		return err
+	}
+
+	grid, err := assets.GetImage("grid.png")
+	if err != nil {
+		return err
+	}
+
+	pathEditor := new(widget.Editor)
+	pathEditor.SetText(entries.Path)
 
 	// create the menu
 	menu := menubar.NewMenubar()
-	upMenuItem := &menubar.MenuItem{
+	upMenuItem := clickable.ClickableMenuItem{
 		Clickable: new(widget.Clickable),
 		OnClick: func(gtx layout.Context) {
 			previousPath := filepath.Join(entries.Path, "..")
@@ -75,16 +87,56 @@ func run(window *app.Window) error {
 				return
 			}
 			entries.Update(previousEntries)
+			pathEditor.SetText(previousEntries.Path)
 		},
-		Layout: func(gtx layout.Context, th *material.Theme) layout.Dimensions {
+		LayoutCallback: func(gtx layout.Context, th *material.Theme) layout.Dimensions {
 			return widget.Image{
-				Src: paint.NewImageOp(*up),
+				Src:   paint.NewImageOp(*up),
+				Scale: 0.5,
 			}.Layout(gtx)
 		},
 	}
 
+	pathMenuItem := editor.EditorInputItem{
+		Editor: pathEditor,
+		Flexed: true,
+	}
+
+	viewMenuItem := clickable.ClickableMenuItem{
+		Clickable: new(widget.Clickable),
+		OnClick: func(gtx layout.Context) {
+			entries.ViewMode = 1 - entries.ViewMode
+		},
+		LayoutCallback: func(gtx layout.Context, th *material.Theme) layout.Dimensions {
+			var image widget.Image
+			var label material.LabelStyle
+
+			if entries.ViewMode == entry.ViewModeGrid {
+				image = widget.Image{
+					Src:   paint.NewImageOp(*grid),
+					Scale: 0.6,
+				}
+				label = material.H6(th, "Grid")
+			} else {
+				image = widget.Image{
+					Src:   paint.NewImageOp(*list),
+					Scale: 0.5,
+				}
+				label = material.H6(th, "List")
+			}
+			return layout.Flex{
+				Axis:      layout.Horizontal,
+				Alignment: layout.Middle,
+			}.Layout(gtx,
+				layout.Rigid(image.Layout),
+				layout.Rigid(label.Layout),
+			)
+		},
+	}
+
 	menu.AddMenuItem(upMenuItem)
-	menu.AddMenuItem(pathItem.MenuItem)
+	menu.AddMenuItem(pathMenuItem)
+	menu.AddMenuItem(viewMenuItem)
 
 	var ops op.Ops
 
@@ -109,7 +161,7 @@ func run(window *app.Window) error {
 				}
 
 				// if the path editor is focused, update the path
-				entrys, err := entry.ReadPath(pathItem.PathEditor.Text())
+				entrys, err := entry.ReadPath(pathEditor.Text())
 				if err != nil {
 					log.Println(err)
 					break
@@ -132,6 +184,7 @@ func run(window *app.Window) error {
 
 					if updatedEntries != nil {
 						entries.Update(updatedEntries)
+						pathEditor.SetText(updatedEntries.Path)
 					}
 
 					return layoutEntries

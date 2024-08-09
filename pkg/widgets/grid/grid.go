@@ -3,7 +3,6 @@ package grid
 import (
 	"gioui.org/layout"
 	"gioui.org/widget"
-	"gioui.org/widget/material"
 )
 
 type Grid struct {
@@ -11,9 +10,7 @@ type Grid struct {
 	List    *widget.List
 }
 
-type GridRowElement func(gtx layout.Context, index int) layout.Dimensions
-
-func (g Grid) Layout(gtx layout.Context, theme *material.Theme, len int, r GridRowElement) layout.Dimensions {
+func (g Grid) Layout(gtx layout.Context, len int, r layout.ListElement) layout.Dimensions {
 	// create a 2D array of rows/cols because we need to render it in a list so its scrollable
 	numberOfRows := len / g.Columns
 	remainder := len % g.Columns
