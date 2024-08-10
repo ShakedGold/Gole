@@ -2,6 +2,7 @@ package clickable
 
 import (
 	"gioui.org/layout"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 )
@@ -26,7 +27,9 @@ func (c ClickableMenuItem) Layout(gtx layout.Context, th *material.Theme) layout
 		c.OnClick(gtx)
 	}
 	return material.Clickable(gtx, c.Clickable, func(gtx layout.Context) layout.Dimensions {
-		return c.LayoutCallback(gtx, th)
+		return layout.UniformInset(unit.Dp(8)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			return c.LayoutCallback(gtx, th)
+		})
 	})
 }
 
