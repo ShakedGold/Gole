@@ -137,6 +137,7 @@ func run(window *app.Window) error {
 	if err != nil {
 		return err
 	}
+	button.Appearance = fluent.Primary
 
 	for {
 		switch e := window.Event().(type) {

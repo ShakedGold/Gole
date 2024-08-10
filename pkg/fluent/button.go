@@ -207,9 +207,13 @@ func (b *ButtonStyle) Layout(gtx layout.Context, theme *Theme) layout.Dimensions
 	b.Update(gtx, theme)
 	// update b.background based on the Appearance
 	b.background, b.color = b.getBackground(theme)
+	borderWidth := unit.Dp(0)
+	if b.Appearance == Outline || b.Appearance == Secondary {
+		borderWidth = unit.Dp(1)
+	}
 	return widget.Border{
 		Color:        color.NRGBA{R: 0xd1, G: 0xd1, B: 0xd1, A: 255}, // Black color
-		Width:        unit.Dp(1),                                     // 0.5 dp wide border
+		Width:        borderWidth,                                    // 0.5 dp wide border
 		CornerRadius: unit.Dp(4),                                     // Optional: rounded corners
 	}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		return layout.Background{}.Layout(gtx,
